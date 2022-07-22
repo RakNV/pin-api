@@ -21,7 +21,7 @@ class Tag(Base):
 
 
 association_table = Table(
-    "association",
+    "pin_tag",
     Base.metadata,
     Column("id", primary_key=True),
     Column("pin_id", ForeignKey("pin.id")),

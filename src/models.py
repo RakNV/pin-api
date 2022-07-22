@@ -20,10 +20,9 @@ class Tag(Base):
     name = Column(String, nullable=False)
 
 
-association_table = Table(
-    "pin_tag",
-    Base.metadata,
-    Column("id", primary_key=True),
-    Column("pin_id", ForeignKey("pin.id")),
-    Column("tag_id", ForeignKey("tag.ig"))
-)
+class PinTag(Base):
+    __tablename__ = "pin_tag"
+
+    id = Column(String)
+    pin_id = Column(ForeignKey("pin.id"), primary_key=True)
+    tag_id = Column(ForeignKey("tag.id"), primary_key=True)

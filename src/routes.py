@@ -1,51 +1,46 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-
-
-class Tag(BaseModel):
-    names: list[str]
-
-
-class ItemIn(BaseModel):
-    img_link: str
-    title: str | None
-    description: str | None
-    tags: Tag
-
-
-class ItemOut(BaseModel):
-    img_link: str
-    title: str
-    description: str
-
+from schemas import ReqModel, ResModel
+from database import NotFoundError
+from database import Database, DATABASE_URL
 
 app = FastAPI()
-
-db = []
-
-
-@app.post("/pin", response_model=ItemOut)
-async def post_pin(item: ItemIn):
-    db.append(item.dict())
-    return item.dict()
+db = Database(DATABASE_URL)
 
 
-@app.get("/pin", response_model=list[ItemOut])
+@app.post("/pin", response_model=ResModel)
+async def post_pin(item: ReqModel):
+    """
+    Create item and store it in database
+    """
+    return db.create(item)
+
+
+@app.get("/pin", response_model=list[ResModel])
 async def get_pins():
-    return db
+    """
+    Get all items stored in database
+    """
+    return db.get_all()
 
 
-@app.delete("/pin/{item_id}", response_model=ItemOut)
+@app.delete("/pin/{item_id}")
 async def delete_pin(item_id: int):
-    if item_id > len(db) - 1:
-        raise HTTPException(status_code=404, detail="Item not found")
-    del db[item_id]
-    return db[item_id]
+    """
+    Deletes item by id from database
+    """
+    try:
+        db.delete(item_id)
+    except NotFoundError as e:
+        print(e)
+        raise HTTPException(status_code=404, detail="Not found!")
 
 
-@app.put("/pin/{item_id}", response_model=ItemOut)
-async def update_pin(item_id: int, item: ItemIn):
-    if item_id > len(db) - 1:
-        HTTPException(status_code=404, detail="Item not found")
-    db[item_id] = item
-    return db[item_id]
+@app.put("/pin/{item_id}", response_model=ResModel)
+async def update_pin(item: ReqModel, item_id: int):
+    """
+    Updates item in database and returns it
+    """
+    try:
+        return db.update(item_id, item)
+    except NotFoundError:
+        raise HTTPException(status_code=404, detail="Not found!")
